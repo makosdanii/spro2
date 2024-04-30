@@ -15,7 +15,7 @@ void setup() {
   scale.begin (DT_pin_DOUT, SCK_pin_CLK); // using the library and the two pins connected to the load cell
   scale.set_scale ();
   scale.tare ();
-  æa
+  æ
 }
 
 void loop() {
