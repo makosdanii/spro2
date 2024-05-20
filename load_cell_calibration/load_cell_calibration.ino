@@ -22,15 +22,15 @@ void loop() {
   if (scale.is_ready()) {
     scale.set_scale (); // using the library 
     Serial.println ("remove any weight from the load cell and tare"); // message to be printed in the serial monitor ("ln" adds a new line)
-    delay (5000); // delay of 5 seconds, so any weight can be removed 
+    //delay (5000); // delay of 5 seconds, so any weight can be removed 
     scale.tare (); // using the library to tare the load cell 
     Serial.println ("place know weight on the scale");
-    delay(5000); 
-    load_cell_reading = scale.get_units(10); // result of averages 10 readings, subtracts the current OFFSET, divides by the current SCALE factor
+    //delay(5000); 
+    load_cell_reading = scale.get_units(1); // result of averages 10 readings, subtracts the current OFFSET, divides by the current SCALE factor
     Serial.println ("load cell reading: "); 
     Serial.print (load_cell_reading); 
   } 
-  else {
-    serial.println ("No Load Cell connected"); 
-  }
+  /* else {
+     Serial.println ("No Load Cell connected"); 
+    } */ 
 }
