@@ -1,0 +1,126 @@
+#define F_CPU 16000000UL // Needs to be defined for the delay functions to work.
+#define BAUD 9600
+#define NUMBER_STRING 1001
+
+#include <avr/io.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <util/delay.h> // Here the delay functions are found.
+#include "usart.h"
+
+void GetValue(const char* pagename, uint32_t* value);
+void Checkbox();
+void Button();
+
+void GetValue(const char* pagename, uint32_t* value) {
+    char readBuffer[100];
+    uint32_t readValue = 0;
+    int typeExpected = 0;
+
+    printf("get %s.val%c%c%c", pagename, 255, 255, 255); // Send the get command.
+    _delay_ms(20);
+
+    for (int i = 0; i < 8; i++) {
+        scanf("%c", &readBuffer[i]);
+        if (readBuffer[i] == 0x71) { // Expect number string.
+            typeExpected = NUMBER_STRING;
+            readBuffer[0] = 0x71; // Move indicator to front, just to keep the nice format.
+            break;
+        }
+    }
+    if (typeExpected == NUMBER_STRING) {
+        for (int i = 1; i < 8; i++) {
+            scanf("%c", &readBuffer[i]);
+        }
+
+        if (readBuffer[0] == 0x71 && readBuffer[5] == 0xFF && readBuffer[6] == 0xFF && readBuffer[7] == 0xFF) { // This is a complete number return.
+            readValue = readBuffer[1] | (readBuffer[2] << 8) | (readBuffer[3] << 16) | (readBuffer[4] << 24);
+        }
+    }
+
+    *value = readValue;
+}
+
+void Checkbox() {
+    uint32_t c0Value = 0;
+    uint32_t c1Value = 0;
+    uint32_t c2Value = 0;
+
+    // Get values of checkboxes
+    GetValue("page0.c0", &c0Value);
+    GetValue("page0.c1", &c1Value);
+    GetValue("page0.c2", &c2Value);
+
+    // Check if all checkboxes have the value 1
+    if (c0Value == 1 && c1Value == 1 && c2Value == 1) {
+        // Make button "b0" visible
+        printf("page0.b0.vis=1%c%c%c", 255, 255, 255);
+    } else {
+        // Make button "b0" invisible
+        printf("page0.b0.vis=0%c%c%c", 255, 255, 255);
+    }
+}
+
+void Button() {
+    uint32_t b0Value = 0;
+    uint32_t b1Value = 0;
+    uint32_t b2Value = 0;
+
+    // Get values of buttons to check if they are pressed
+    GetValue("page0.b0", &b0Value);
+    GetValue("page1.b1", &b1Value);
+    GetValue("page2.b2", &b2Value);
+
+    // Handle button presses
+    if (b0Value == 1) {
+        printf("page 1%c%c%c", 255, 255, 255); // Go to page1
+    } else if (b1Value == 1) {
+        printf("page 2%c%c%c", 255, 255, 255); // Go to page2
+    } else if (b2Value == 1) {
+        printf("page 0%c%c%c", 255, 255, 255); // Go to page0
+    }
+}
+
+int main(void)
+{
+    uart_init();
+    io_redirect();
+
+    printf("page 0%c%c%c", 255, 255, 255); // Init at 9600 baud.
+    _delay_ms(20);
+    
+    uint32_t readValue0 = 0;
+    uint32_t readValue1 = 0;
+    uint32_t readValue4 = 0;
+    uint32_t readValue3 = 0;
+
+    while (1) 
+    {
+        // Get values from page1
+        GetValue("page1.n0", &readValue0); // Get the value of Force
+        GetValue("page1.n1", &readValue1); // Get the value of Speed
+
+        // Get values from page2
+        GetValue("page2.n4", &readValue4); // Get the value of Kb
+        GetValue("page2.n3", &readValue3); // Get the value of Ka
+
+        // Printing the values
+        printf("page1.n0.val=%d%c%c%c", (int)readValue0, 255, 255, 255); // Printing the value of Force
+        _delay_ms(100);
+        printf("page1.n1.val=%d%c%c%c", (int)readValue1, 255, 255, 255); // Printing the value of Speed
+        _delay_ms(100);
+        printf("page2.n4.val=%d%c%c%c", (int)readValue4, 255, 255, 255); // Printing the value of Kb
+        _delay_ms(100);
+        printf("page2.n3.val=%d%c%c%c", (int)readValue3, 255, 255, 255); // Printing the value of Ka
+        _delay_ms(100);
+
+        // Check checkboxes and set button visibility
+        Checkbox();
+		// Check for button presses
+		Button();
+        // Delay to avoid too frequent checking
+		_delay_ms(500);
+		
+    }
+}
