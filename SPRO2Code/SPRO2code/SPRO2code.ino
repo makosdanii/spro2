@@ -56,12 +56,20 @@ float torqueOffset = 0;
 void setup()
 {
   Serial.begin(9600);
-  Serial.println("MOTOR TEST STAND");
+  delay(5000);
+
+  print_nextion("page 0");
+
+  // Serial.print("page1.x0.val=");
+  // print_nextion_float(1.0); //Printing the value of Kt
+
+  //Serial.println("MOTOR TEST STAND");
   torqueSensor.begin(dataPin, clockPin);
   torqueSensor.set_offset(141007);
   torqueSensor.set_scale(1989.465332);
   torqueOffset = torqueSensor.get_units(10);
 
+  
 
   actuator.attach(7);
   actuator.write(180);
@@ -83,6 +91,21 @@ void setup()
   float varF = Af * Kt;
   J = -(varF + (Kb * Kt / R)) * timeTo / log(0.1);
 
+  print_nextion("page 1");
+
+  Serial.print("page2.x2.val=");
+  long debug_Kb = (long)(Kb*1000);
+  print_nextion_float(debug_Kb);
+
+  Serial.print("page2.x3.val=");
+  long debug_Kt = (long)(Kt*1000);
+  print_nextion_float(debug_Kt); // Printing the value of Kt
+
+  Serial.print("page2.x4.val=");
+  long debug_J = (long)(J*10000);
+  print_nextion_float(debug_J); //Printing of moment of inertia
+  Serial.print(J);
+
   //Serial.print("Constant friction:  ");
   //Serial.println(constF, 6);
   //Serial.print("Variable friction:  ");
@@ -92,24 +115,28 @@ void setup()
 void loop()
 {
 
-  print_nextion("page1");
-  measure_motor_constants();
-  moment_of_inertia();
-  measure_torque();
+  // print_nextion("page2");
+  // delay(5000);
+  // print_nextion("page1");
+  // delay(5000);
 
-  Serial.print("page2.x2.val=");
-  long debug_Kb = (long)(Kb*1000000);
-  print_nextion(debug_Kb); // Printing the value of Kb
+  // // measure_motor_constants();
+  // // moment_of_inertia();
+  // // measure_torque();
+
+  // Serial.print("page2.x2.val=");
+  // long debug_Kb = (long)(Kb*1000000);
+  // print_nextion(debug_Kb); // Printing the value of Kb
 
 
-  Serial.print("page2.x3.val=");
-  long debug_Kt = (long)(Kt*1000000);
-  print_nextion(debug_Kt); // Printing the value of Kt
+  // Serial.print("page2.x3.val=");
+  // long debug_Kt = (long)(Kt*1000000);
+  // print_nextion(debug_Kt); // Printing the value of Kt
 
 
-  Serial.print("page2.x4.val=");
-  long debug_J = (long)(J*10000000);
-  print_nextion(debug_J); //Printing of moment of inertia
+  // Serial.print("page2.x4.val=");
+  // long debug_J = (long)(J*10000000);
+  // print_nextion(debug_J); //Printing of moment of inertia
 
 
 
@@ -214,9 +241,11 @@ void measure_motor_constants() {
  
     current = get_Current();
     velocity = velocity_average(20);
-    Serial.print(current);
-    Serial.print("\t");
-    Serial.println(velocity);
+    // Serial.print(current);
+    // Serial.print("\t");
+    Serial.print("page1.x1.val=");
+    print_nextion_float(velocity); //Printing velocity
+    //Serial.println(velocity);
     Exp1Fit->addPoint(velocity, current);
 
     motorSlowSpeed();
@@ -227,6 +256,8 @@ void measure_motor_constants() {
     //Serial.print(current);
     //Serial.print("\t");
     //Serial.println(velocity);
+    Serial.print("page1.x1.val=");
+    print_nextion_float(velocity); //Printing velocity
     Exp1Fit->addPoint(velocity, current);
 
 
@@ -234,9 +265,9 @@ void measure_motor_constants() {
   Bf = Exp1Fit->calculate(0);
   Af = (Exp1Fit->calculate(1)) - Bf;
 
-  Serial.println("LINE: ");
-  Serial.println(Af, 6);
-  Serial.println(Bf, 6);
+  // Serial.println("LINE: ");
+  // Serial.println(Af, 6);
+  // Serial.println(Bf, 6);
   Exp1Fit->reset();
 }
 
@@ -280,12 +311,12 @@ void measure_torque() {
       }
         // Printing the values
       Serial.print("page1.x0.val=");
-      long debug_t = (long)(t*1000);
-      print_nextion(debug_t);// Printing the value of Force
+      //long debug_t = (long)(t*1000);
+      print_nextion_float(t);// Printing the value of Force
       
       Serial.print("page1.x1.val=");
-      long debug_v = (long)(v*100);
-      print_nextion(debug_v); // Printing the value of Speed
+      //long debug_v = (long)(v*100);
+      print_nextion_float(v); // Printing the value of Speed
 
       Exp2Fit->addPoint(v, t);
     }
@@ -395,6 +426,14 @@ void GetValue(const char* pagename, uint32_t* value) {
 
 void print_nextion(char* text){
   Serial.print(text); 
+  Serial.write(0xff);
+  Serial.write(0xff);
+  Serial.write(0xff);
+}
+
+void print_nextion_float(float value){
+  long value_long = value * 1000;
+  Serial.print(value_long); 
   Serial.write(0xff);
   Serial.write(0xff);
   Serial.write(0xff);
